@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+
+# Scan outputs
+scan_*.csv
+scan_*.json
+scan_*.html
+blackport_*.csv
+blackport_*.json
+blackport_*.html
+*.log
+
+# Reports
+report.html
+report.json

@@ -1,0 +1,17 @@
+{
+  "vsFTPd 2.3.4": {
+    "cves": ["CVE-2011-2523"],
+    "severity": "CRITICAL",
+    "notes": "Backdoor vulnerability triggered by malformed username"
+  },
+  "Apache/2.2.8": {
+    "cves": ["CVE-2011-3192", "CVE-2009-1891"],
+    "severity": "HIGH",
+    "notes": "Multiple remote DoS and traversal vulnerabilities"
+  },
+  "OpenSSH_4.7": {
+    "cves": ["CVE-2008-5161"],
+    "severity": "MEDIUM",
+    "notes": "Weak key exchange vulnerability"
+  }
+}
