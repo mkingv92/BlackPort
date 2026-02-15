@@ -1,5 +1,14 @@
+# =====================================================================
+# File: html_report.py
+# Notes:
+# - This file is part of the BlackPort project.
+# - The comments added here are for readability only (no behavior change).
+# - Use only on hosts/networks you own or have explicit permission to test.
+# =====================================================================
+
 from datetime import datetime
 
+# NOTE: generate_html_report() - helper/entry function. Read the body for the exact steps.
 def generate_html_report(results, target, duration, score, high, medium, low, filename):
     # Determine overall risk level
     if score >= 8:
@@ -15,6 +24,7 @@ def generate_html_report(results, target, duration, score, high, medium, low, fi
         overall = "LOW"
         overall_color = "#4CAF50"
  
+    # NOTE: risk_color() - helper/entry function. Read the body for the exact steps.
     def risk_color(risk):
         return {
             "HIGH": "#ff4d4d",

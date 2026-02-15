@@ -1,3 +1,11 @@
+# =====================================================================
+# File: cve_db.py
+# Notes:
+# - This file is part of the BlackPort project.
+# - The comments added here are for readability only (no behavior change).
+# - Use only on hosts/networks you own or have explicit permission to test.
+# =====================================================================
+
 CVE_DATABASE = {
     "vsFTPd 2.3.4": {
         "cve": "CVE-2011-2523",
@@ -23,6 +31,7 @@ CVE_DATABASE = {
 }
 
 
+# NOTE: check_cve() - helper/entry function. Read the body for the exact steps.
 def check_cve(product, version):
     full_string = f"{product} {version}"
 
