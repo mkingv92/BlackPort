@@ -1,3 +1,11 @@
+# =====================================================================
+# File: gui.py
+# Notes:
+# - This file is part of the BlackPort project.
+# - The comments added here are for readability only (no behavior change).
+# - Use only on hosts/networks you own or have explicit permission to test.
+# =====================================================================
+
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from tkinter import messagebox
@@ -6,8 +14,10 @@ import threading
 from scanner import PortScanner
 
 
+# NOTE: FastScanGUI - class used to group related scanning/reporting logic.
 class FastScanGUI:
 
+    # NOTE: __init__() - helper/entry function. Read the body for the exact steps.
     def __init__(self, root):
         self.root = root
         self.root.title("FastScan Pro")
@@ -49,10 +59,12 @@ class FastScanGUI:
         self.output = ScrolledText(root, height=25)
         self.output.pack(fill=BOTH, expand=True, padx=10, pady=10)
 
+    # NOTE: start_scan() - helper/entry function. Read the body for the exact steps.
     def start_scan(self):
         thread = threading.Thread(target=self.run_scan)
         thread.start()
 
+    # NOTE: run_scan() - helper/entry function. Read the body for the exact steps.
     def run_scan(self):
         target = self.target_entry.get().strip()
         start = self.start_entry.get().strip()
@@ -83,6 +95,7 @@ class FastScanGUI:
 
         results = []
 
+        # NOTE: update_progress() - helper/entry function. Read the body for the exact steps.
         def update_progress(port_count):
             progress_percent = (port_count / total_ports) * 100
             self.progress["value"] = progress_percent
@@ -104,6 +117,7 @@ class FastScanGUI:
         self.progress["value"] = 100
         messagebox.showinfo("Complete", "Scan Finished")
 
+    # NOTE: get_risk_level() - helper/entry function. Read the body for the exact steps.
     def get_risk_level(self, port):
         high_risk = [21, 22, 23, 445, 3389]
         if port in high_risk:

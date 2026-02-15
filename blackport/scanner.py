@@ -1,3 +1,11 @@
+# =====================================================================
+# File: scanner.py
+# Notes:
+# - This file is part of the BlackPort project.
+# - The comments added here are for readability only (no behavior change).
+# - Use only on hosts/networks you own or have explicit permission to test.
+# =====================================================================
+
 import socket
 import json
 import csv
@@ -36,7 +44,9 @@ HIGH_RISK_PORTS = {21, 22, 23, 445, 3389}
 MEDIUM_RISK_PORTS = {80, 443, 8080}
 
 
+# NOTE: PortScanner - class used to group related scanning/reporting logic.
 class PortScanner:
+    # NOTE: __init__() - helper/entry function. Read the body for the exact steps.
     def __init__(self, target, start_port, end_port, threads=200, timeout=1):
         self.target = target
         self.start_port = start_port
@@ -46,6 +56,7 @@ class PortScanner:
         self.results = []
         self.ports = range(self.start_port, self.end_port +1)
 
+    # NOTE: color_risk() - helper/entry function. Read the body for the exact steps.
     def color_risk(self, risk):
 
         if risk == "CRITICAL":
@@ -60,6 +71,7 @@ class PortScanner:
             return risk
 
 
+    # NOTE: grab_banner() - helper/entry function. Read the body for the exact steps.
     def grab_banner(self, sock, port):
         try:
             sock.settimeout(2)
@@ -92,6 +104,7 @@ class PortScanner:
 
         return None
 
+    # NOTE: scan_port() - helper/entry function. Read the body for the exact steps.
     def scan_port(self, port, cve_db):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -174,6 +187,7 @@ class PortScanner:
             return None
 
 
+    # NOTE: generate_reports() - helper/entry function. Read the body for the exact steps.
     def generate_reports(self, duration):
         if not self.results:
             print("\nNo open ports found.")
@@ -304,6 +318,7 @@ class PortScanner:
                 print(f"    🚨 {exploit['severity']} - {exploit['description']} ({exploit['reference']})")
 
 
+    # NOTE: scan() - helper/entry function. Read the body for the exact steps.
     def scan(self):
         start_time = time.time()
         ports = range(self.start_port, self.end_port + 1)

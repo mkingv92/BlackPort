@@ -1,8 +1,17 @@
+# =====================================================================
+# File: cli.py
+# Notes:
+# - This file is part of the BlackPort project.
+# - The comments added here are for readability only (no behavior change).
+# - Use only on hosts/networks you own or have explicit permission to test.
+# =====================================================================
+
 import argparse
 from blackport.scanner import run_scan
 from blackport.reporter import generate_report
 
 
+# NOTE: main() - helper/entry function. Read the body for the exact steps.
 def main():
     parser = argparse.ArgumentParser(
         prog="blackport",

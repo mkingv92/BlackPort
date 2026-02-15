@@ -1,8 +1,17 @@
+# =====================================================================
+# File: enum_modules.py
+# Notes:
+# - This file is part of the BlackPort project.
+# - The comments added here are for readability only (no behavior change).
+# - Use only on hosts/networks you own or have explicit permission to test.
+# =====================================================================
+
 import socket
 import re
 import ftplib
 import subprocess
 
+# NOTE: get_http_title() - helper/entry function. Read the body for the exact steps.
 def get_http_title(ip, port):
     try:
         s = socket.socket()
@@ -19,6 +28,7 @@ def get_http_title(ip, port):
         return None
 
 
+# NOTE: check_ftp_anonymous() - helper/entry function. Read the body for the exact steps.
 def check_ftp_anonymous(ip):
     try:
         ftp = ftplib.FTP(ip, timeout=3)
@@ -29,6 +39,7 @@ def check_ftp_anonymous(ip):
         return False
 
 
+# NOTE: enum_smb_shares() - helper/entry function. Read the body for the exact steps.
 def enum_smb_shares(ip):
     try:
         result = subprocess.run(

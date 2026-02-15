@@ -1,5 +1,14 @@
+# =====================================================================
+# File: banner.py
+# Notes:
+# - This file is part of the BlackPort project.
+# - The comments added here are for readability only (no behavior change).
+# - Use only on hosts/networks you own or have explicit permission to test.
+# =====================================================================
+
 import socket
 
+# NOTE: grab_banner() - helper/entry function. Read the body for the exact steps.
 def grab_banner(target, port):
     try:
         sock = socket.socket()

@@ -1,3 +1,11 @@
+# =====================================================================
+# File: main.py
+# Notes:
+# - This file is part of the BlackPort project.
+# - The comments added here are for readability only (no behavior change).
+# - Use only on hosts/networks you own or have explicit permission to test.
+# =====================================================================
+
 import argparse
 import sys
 from banner import show_banner
@@ -10,11 +18,13 @@ from enum_modules import get_http_title, check_ftp_anonymous, enum_smb_shares
 VERSION = "1.0.0"
 
 
+# NOTE: sort_by_risk() - helper/entry function. Read the body for the exact steps.
 def sort_by_risk(results):
     priority = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
     return sorted(results, key=lambda x: priority.get(x["risk"], 3))
 
 
+# NOTE: main() - helper/entry function. Read the body for the exact steps.
 def main():
     show_banner(VERSION)
 

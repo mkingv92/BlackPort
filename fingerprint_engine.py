@@ -1,3 +1,11 @@
+# =====================================================================
+# File: fingerprint_engine.py
+# Notes:
+# - This file is part of the BlackPort project.
+# - The comments added here are for readability only (no behavior change).
+# - Use only on hosts/networks you own or have explicit permission to test.
+# =====================================================================
+
 import re
 
 FINGERPRINTS = [
@@ -33,6 +41,7 @@ FINGERPRINTS = [
     }
 ]
 
+# NOTE: fingerprint_service() - helper/entry function. Read the body for the exact steps.
 def fingerprint_service(port, banner):
         if not banner:
             return None, None, None, 0

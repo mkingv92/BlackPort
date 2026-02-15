@@ -1,3 +1,11 @@
+# =====================================================================
+# File: reporter.py
+# Notes:
+# - This file is part of the BlackPort project.
+# - The comments added here are for readability only (no behavior change).
+# - Use only on hosts/networks you own or have explicit permission to test.
+# =====================================================================
+
 def generate_html_report(target, results, os_guess, risk_level):
     filename = f"{target}_report.html"
 
