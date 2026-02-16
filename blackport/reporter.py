@@ -13,7 +13,7 @@ def generate_html_report(target, results, os_guess, risk_level):
         f.write(f"""
         <html>
         <head>
-        <title>FastScan Pro Report</title>
+        <title>BlackPort Report</title>
         </head>
         <body>
         <h1>Scan Report for {target}</h1>
