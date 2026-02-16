@@ -72,7 +72,7 @@ def generate_html_report(results, target, duration, score, high, medium, low, fi
 </head>
 <body>
 
-<h1>FastScan Security Report</h1>
+<h1>BlackPort Security Report</h1>
 
 <h2 style="color:{overall_color};">
 Overall Risk: {overall}
