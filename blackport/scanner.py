@@ -18,6 +18,7 @@ from enum_modules import get_http_title, check_ftp_anonymous, enum_smb_shares
 from fingerprint_engine import fingerprint_service
 from exploit_indicators import check_exploit_indicators
 from html_report import generate_html_report
+from tls_enum import get_tls_details
 from colorama import Fore, Style, init
 init(autoreset=True)
 
@@ -47,7 +48,7 @@ MEDIUM_RISK_PORTS = {80, 443, 8080}
 # NOTE: PortScanner - class used to group related scanning/reporting logic.
 class PortScanner:
     # NOTE: __init__() - helper/entry function. Read the body for the exact steps.
-    def __init__(self, target, start_port, end_port, threads=200, timeout=1):
+    def __init__(self, target, start_port, end_port, threads=200, timeout=3):
         self.target = target
         self.start_port = start_port
         self.end_port = end_port
@@ -140,7 +141,11 @@ class PortScanner:
                 http_title = None
                 ftp_anon = None
                 smb_enum = None
+                tls_details = None
 
+                # TLS Intelligence (certificate + cipher) for HTTPS/TLS-like ports
+                if service == "HTTPS" or port in {443, 8443, 9443, 993, 995, 465, 587}:
+                    tls_details = get_tls_details(self.target, port, server_name=self.target)
                 if service == "HTTP":
                     http_title = get_http_title(self.target, port)
                 elif service == "FTP":
@@ -179,6 +184,7 @@ class PortScanner:
                     "http_title": http_title,
                     "anonymous_ftp": ftp_anon,
                     "smb_shares": smb_enum,
+                    "tls": tls_details,
                     "cve_info": cve_info
 
                 }
@@ -201,8 +207,16 @@ class PortScanner:
             json.dump(self.results, json_file, indent=4)
 
         # CSV Export
+        # NOTE: Fieldnames are built from the UNION of all result keys so optional
+        # fields (like TLS intelligence) don't break CSV export.
+        fieldnames = []
+        for row in self.results:
+            for k in row.keys():
+                if k not in fieldnames:
+                    fieldnames.append(k)
+
         with open(f"{base_filename}.csv", "w", newline="") as csv_file:
-           writer = csv.DictWriter(csv_file, fieldnames=self.results[0].keys())
+           writer = csv.DictWriter(csv_file, fieldnames=fieldnames, extrasaction="ignore")
            writer.writeheader()
            writer.writerows(self.results)
 

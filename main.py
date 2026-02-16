@@ -15,7 +15,7 @@ import time
 from cve_lookup import load_cve_db, match_cves
 from cve_db import CVE_DATABASE
 from enum_modules import get_http_title, check_ftp_anonymous, enum_smb_shares
-VERSION = "1.0.0"
+VERSION = "2.0.0"
 
 
 # NOTE: sort_by_risk() - helper/entry function. Read the body for the exact steps.

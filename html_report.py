@@ -117,6 +117,7 @@ Overall Risk: {overall}
 <th>Version</th>
 <th>Risk</th>
 <th>Exploit Indicator</th>
+<th>TLS</th>
 </tr>
 """
 
@@ -126,6 +127,32 @@ Overall Risk: {overall}
             e = r["exploit_indicator"]
             exploit = f"{e['severity']} - {e['description']} ({e['reference']})"
 
+        tls_cell = ""
+        tls = r.get("tls")
+        if tls:
+            cert = (tls.get("certificate") or {})
+            cipher = (tls.get("cipher") or {})
+            flags = (tls.get("flags") or {})
+            bits = cipher.get("bits")
+            cipher_name = cipher.get("name")
+            exp = cert.get("not_after")
+            subj = cert.get("subject")
+            issuer = cert.get("issuer")
+            alerts = []
+            if flags.get("expired"):
+                alerts.append("expired")
+            if flags.get("self_signed"):
+                alerts.append("self-signed")
+            if not flags.get("hostname_match", True):
+                alerts.append("hostname-mismatch")
+            if flags.get("weak_cipher"):
+                alerts.append("weak-cipher")
+            alert_str = ("; ".join(alerts)) if alerts else "ok"
+            tls_cell = f"<div><strong>{tls.get('tls_version') or ''}</strong></div>" \
+                      f"<div>{cipher_name or ''} {('(' + str(bits) + 'bit)') if bits else ''}</div>" \
+                      f"<div style='opacity:0.85;font-size:0.9em;'>exp: {exp or ''}</div>" \
+                      f"<div style='opacity:0.85;font-size:0.9em;'>flags: {alert_str}</div>"
+
         html_content += f"""
 <tr>
 <td>{r['port']}</td>
@@ -134,6 +161,7 @@ Overall Risk: {overall}
 <td>{r.get('version') or ''}</td>
 <td><span class="badge" style="background:{risk_color(r['risk'])};">{r['risk']}</span></td>
 <td>{exploit}</td>
+<td>{tls_cell}</td>
 </tr>
 """
     remediation = []
