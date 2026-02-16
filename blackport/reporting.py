@@ -20,7 +20,7 @@ def save_html(results, filename):
     html = f"""
     <html>
     <body>
-    <h2>FastScan X Report</h2>
+    <h2>BlackPort Report</h2>
     <p>Generated: {datetime.now()}</p>
     <table border="1">
     <tr><th>Host</th><th>Port</th><th>Service</th><th>Banner</th></tr>
