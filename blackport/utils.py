@@ -11,7 +11,7 @@ import logging
 # NOTE: setup_logger() - helper/entry function. Read the body for the exact steps.
 def setup_logger():
     logging.basicConfig(
-        filename="fastscan.log",
+        filename="BlackPort.log",
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s"
     )
