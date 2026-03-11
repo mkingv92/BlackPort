@@ -1,0 +1,5 @@
+colorama>=0.4.6          # Terminal colors
+requests>=2.31.0         # HTTP requests and NVD API calls
+paramiko>=3.3.1          # SSH protocol support
+reportlab>=4.0.4         # Professional PDF report generation
+scapy>=2.5.0             # SYN scanning support
