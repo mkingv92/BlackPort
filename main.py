@@ -191,7 +191,7 @@ def _scan_target(target, args, port_list, start_port, end_port, output_dir):
                 port_list=discovered_ports,  # Only scan ports SYN found as open
                 pdf=getattr(args, 'pdf', False),
             )
-            scanner.scan()
+            scanner.scan_known_open_ports(discovered_ports)
             return scanner
             
         except ImportError:

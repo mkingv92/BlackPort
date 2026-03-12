@@ -193,6 +193,144 @@ class PortScanner:
 
         except Exception:
             return None
+    
+    
+    def enrich_known_open_port(self, port, cve_db):
+        """
+        Enrich a port that has already been confirmed open by SYN discovery.
+        Do NOT treat connect/banner failure as port closed.
+        """
+        banner = None
+        product = None
+        version = None
+        confidence = 0
+        http_title = None
+        tls_details = None
+
+        service_hint = service_from_port(port)
+        service = service_hint if service_hint else "Unknown"
+
+        # Base risk from port alone
+        if port in HIGH_RISK_PORTS:
+            risk = "HIGH"
+        elif port in MEDIUM_RISK_PORTS:
+            risk = "MEDIUM"
+        else:
+            risk = "LOW"
+
+        # Best-effort enrichment only
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(self.timeout)
+                s.connect((self.target, port))
+
+                banner = self.grab_banner(s, port)
+
+                detected_service, product, version, confidence = fingerprint_banner(
+                    port, banner, service_hint=service_hint
+                )
+
+                if detected_service and detected_service != "Unknown":
+                    service = detected_service
+
+        except Exception:
+            # Keep the port as open even if enrichment fails
+            pass
+
+        exploit_flag = check_exploit_indicators(product, version)
+        cve_matches = match_cves(banner, cve_db) if banner else []
+
+        try:
+            if service == "HTTPS" or port in {443, 8443, 9443, 993, 995, 465, 587}:
+                tls_details = get_tls_details(self.target, port, server_name=self.target)
+            elif service == "HTTP":
+                http_title = get_http_title(self.target, port)
+        except Exception:
+            pass
+
+        product = product.strip("()") if product else None
+        version = version.strip("()") if version else None
+
+        cve_info = check_cve(product, version) if product and version else None
+        if cve_info:
+            if cve_info["cvss"] >= 9:
+                risk = "CRITICAL"
+            elif cve_info["cvss"] >= 7:
+                risk = "HIGH"
+            elif cve_info["cvss"] >= 4:
+                risk = "MEDIUM"
+            else:
+                risk = "LOW"
+
+        return {
+            "port": port,
+            "service": service,
+            "banner": banner,
+            "product": product,
+            "version": version,
+            "confidence": confidence,
+            "risk": risk,
+            "exploit_indicator": exploit_flag,
+            "cve_matches": cve_matches,
+            "http_title": http_title,
+            "anonymous_ftp": None,
+            "smb_shares": None,
+            "tls": tls_details,
+            "cve_info": cve_info,
+            "plugins": [],
+            "verified_by": "syn",
+        }
+
+    def scan_known_open_ports(self, known_open_ports):
+        """
+        Use this when ports were already discovered as open by SYN scan.
+        This skips the connect-only sweep logic that can incorrectly discard ports.
+        """
+        start_time = time.time()
+        cve_db = load_cve_db()
+        total_ports = len(known_open_ports)
+
+        print(f"\nStarting enrichment on {self.target}")
+        print(f"Processing {total_ports} SYN-confirmed open port(s)...\n")
+
+        self.results = []
+        scanned = 0
+
+        with ThreadPoolExecutor(max_workers=self.threads) as executor:
+            futures = [executor.submit(self.enrich_known_open_port, port, cve_db) for port in known_open_ports]
+            for future in as_completed(futures):
+                result = future.result()
+                scanned += 1
+                print(f"Progress: {scanned}/{total_ports} ({scanned/total_ports*100:.1f}%)", end="\r")
+                if result:
+                    self.results.append(result)
+        print()
+
+        print(f"{Fore.CYAN}[*] Enrichment complete — {len(self.results)} open port(s) preserved{Style.RESET_ALL}")
+
+        if self.results:
+            phase2_start = time.time()
+            self._plugin_phase()
+            phase2_time = round(time.time() - phase2_start, 1)
+            print(f"{Fore.CYAN}[*] Plugin phase complete [{phase2_time}s]{Style.RESET_ALL}")
+
+        if any(r.get("port") in SMB_PORTS for r in self.results):
+            phase3_start = time.time()
+            print(f"{Fore.CYAN}[*] Running SMB enumeration...{Style.RESET_ALL}")
+            self._smb_post_sweep()
+            phase3_time = round(time.time() - phase3_start, 1)
+            print(f"{Fore.CYAN}[*] SMB complete [{phase3_time}s]{Style.RESET_ALL}")
+
+        risk_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+        self.results = sorted(
+            self.results,
+            key=lambda x: (risk_order.get(x["risk"], 4), x["port"])
+        )
+
+        duration = round(time.time() - start_time, 2)
+        self.generate_reports(duration)
+        return self.results
+
 
     # NOTE: _run_plugins_for_port() — runs all matching plugins for a single
     # port result dict. Called concurrently by _plugin_phase(). Returns the
