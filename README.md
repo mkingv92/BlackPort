@@ -1,509 +1,218 @@
-# BlackPort v2.3.0
+<div align="center">
 
-**Offensive Port Intelligence Engine** — A professional network security scanner with active exploit verification and dual-mode scanning (SYN/TCP).
+<img src="https://raw.githubusercontent.com/jsquaresec/jsquaresec/main/assets/j2sec-approved-banner.webp" alt="J2SEC approved banner" width="100%" />
 
-[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey.svg)](https://github.com/mkingv92/BlackPort)
+<br>
 
-> ⚠️ **Legal Notice**: This tool is for authorized security testing only. Use only on networks/systems you own or have explicit written permission to test. Unauthorized scanning is illegal.
+<img src="https://raw.githubusercontent.com/jsquaresec/jsquaresec/main/assets/j2sec-approved-profile.webp" alt="J2SEC approved profile artwork" width="480" />
 
----
+</div>
 
-## 🚀 Features
+# BlackPort
 
-### Core Capabilities
-- **Dual-Mode Scanning**: SYN (stealth) and TCP connect modes with automatic fallback
-- **Active Verification**: 23 plugin-based checks that confirm exploits (not just detect)
-- **Multi-Threaded**: 400-thread port sweeps with intelligent auto-scaling
-- **CVE Database**: 80+ static CVE entries with CVSS scores and exploit availability
-- **Multi-Format Reports**: JSON, CSV, HTML, and PDF outputs
-- **Network Scanning**: CIDR range support with automatic host discovery
+BlackPort is a network security scanner for authorized assessment work. It combines port discovery, service fingerprinting, vulnerability correlation, verification plugins, reporting, UDP support, and a local browser-based GUI.
 
-### 🆕 v2.3.0 - SYN Scanning
+> Use BlackPort only on systems and networks you own or have explicit permission to test.
 
-BlackPort now supports **SYN (half-open) scanning** for faster, stealthier reconnaissance:
+## J2SEC Fork
+
+This repository is maintained by **Joshua Jones / J2SEC** as a fork of the original BlackPort project by Matthew Valdez (`mkingv92`). Upstream attribution remains intact.
+
+The fork extends the original scanner with:
+
+- local browser-based GUI bound to `127.0.0.1`
+- TCP connect, SYN, UDP, and mixed scan modes
+- Safe, Verify, and Aggressive assessment profiles
+- dedicated UDP scanner with conservative state handling
+- UDP Top 25, Top 50, Top 100, and full-range profiles
+- protocol-aware UDP probes for common services
+- local scan history and JSON report viewing
+- CISA Known Exploited Vulnerabilities correlation
+- FIRST EPSS lookups with local caching
+- additional confidence and risk scoring
+- TLS posture interpretation
+- passive web-technology hints
+- enriched report sidecars that preserve upstream JSON output
+
+## Local GUI
+
+The GUI runs entirely on the local machine and does not require a VPS.
 
 ```bash
-# TCP Connect mode (no root required)
-python main.py 192.168.1.100 --top-100              # 12.3s
-
-# SYN mode (requires sudo, 1.4x faster)
-sudo python main.py 192.168.1.100 --top-100 --syn   # 8.9s
+python gui.py
 ```
 
-**Performance Improvements:**
-- ✅ **1.4x faster** on standard scans (--top-100)
-- ✅ **2.6x faster** discovery phase (1.5s vs 4.0s)
-- ✅ Intelligent batching prevents resource exhaustion on large scans
-- ✅ Auto-scales worker pool based on scan size and system limits
-- ✅ Same accuracy — all findings confirmed in both modes
+Default interface:
 
----
+```text
+http://127.0.0.1:8787
+```
 
-## 📊 Performance Benchmarks
+Use another local port:
 
-**Target:** Metasploitable 2 (VirtualBox LAN)
+```bash
+python gui.py --port 9000
+```
 
-| Scan Profile | Ports | TCP Mode | SYN Mode | Speedup | Use Case |
-|--------------|-------|----------|----------|---------|----------|
-| **--top-100** | 48 | 12.3s | **8.9s** ✅ | **1.4x** | Quick triage (recommended) |
-| **--top-500** | 200+ | ~15s | **~12s** ✅ | 1.25x | Comprehensive recon |
-| **--top-1000** | 1-1000 | **9.7s** | 26.7s | — | Standard range scan |
-| **Discovery only** | 48 | 4.0s | **1.5s** ✅ | **2.6x** | Port enumeration |
+Start without automatically opening a browser:
 
-### When to Use Each Mode
+```bash
+python gui.py --no-browser
+```
 
-| Use SYN When... | Use TCP When... |
-|-----------------|-----------------|
-| ✅ Quick reconnaissance needed | ✅ No root/sudo access available |
-| ✅ Stealth is important | ✅ Running in containers/Docker |
-| ✅ Scanning remote/Internet targets | ✅ Local LAN with fast connectivity |
-| ✅ Root privileges available | ✅ Firewall blocks raw packets |
+## Scan Modes
 
----
+### TCP
 
-## 🎯 Active Verification Plugins (23)
+```bash
+python mayhem_scan.py 192.168.1.10 --mode tcp --tcp-profile top-100
+```
 
-BlackPort doesn't just detect services — it **actively confirms** exploitability:
+### SYN
 
-### Critical Findings (Confirmed)
-- **vsFTPd 2.3.4 Backdoor** — Triggers backdoor, confirms shell on port 6200
-- **distccd RCE** — Executes `id` command, returns `uid=1(daemon)`
-- **MySQL Root Access** — Tests login without password
-- **Tomcat Manager** — Tests default credentials `tomcat:tomcat`
-- **Ghostcat (AJP)** — Reads `WEB-INF/web.xml` via CVE-2020-1938
-- **NFS Exports** — Lists world-readable shares
-- **Bindshell** — Confirms root shell on port 1524
-- **Telnet** — Tests authentication requirement
+```bash
+sudo python mayhem_scan.py 192.168.1.10 --mode syn --tcp-profile top-100
+```
 
-### All Plugins
-FTP • SSH • Telnet • SMTP • HTTP/HTTPS • DNS • SMB • NetBIOS • RPC • rservices (rsh/rlogin/rexec) • Java RMI • MySQL • PostgreSQL • NFS • distccd • VNC • X11 • IRC (UnrealIRCd) • AJP/Ghostcat • Tomcat Manager • Ruby DRb • Bindshell
+### UDP
 
----
+```bash
+python mayhem_scan.py 192.168.1.10 --mode udp --udp-profile top-50
+```
 
-## 🔧 Installation
+### Mixed
 
-### Requirements
+```bash
+python mayhem_scan.py 192.168.1.10 --mode mixed --tcp-profile top-100 --udp-profile top-25
+```
+
+> Some internal filenames still retain legacy names for compatibility. Branding and public-facing documentation now use **J2SEC**.
+
+## Assessment Profiles
+
+### Safe
+
+Default profile. Keeps TCP/SYN discovery and fingerprinting while disabling active verification plugins and SMB post-sweep enumeration.
+
+```bash
+python mayhem_scan.py 192.168.1.10 --mode tcp --assessment-profile safe
+```
+
+### Verify
+
+Enables only reviewed non-destructive verification plugins.
+
+```bash
+python mayhem_scan.py 192.168.1.10 --mode tcp --assessment-profile verify
+```
+
+### Aggressive
+
+Preserves upstream active verification behavior. Use only where the assessment scope explicitly permits active verification.
+
+```bash
+python mayhem_scan.py 192.168.1.10 --mode tcp --assessment-profile aggressive
+```
+
+## UDP Scanning
+
+The UDP engine supports:
+
+- `open`, `closed`, and `open|filtered` states
+- retries and configurable timeouts
+- worker-count controls
+- common service naming
+- persistent JSON reports
+- Top 25 / Top 50 / Top 100 / full-range profiles
+- protocol-aware probes for DNS, NTP, SSDP/UPnP, mDNS, LLMNR, and Memcached
+
+Examples:
+
+```bash
+python udp_scanner.py 192.168.1.10 --top-25
+python udp_scanner.py 192.168.1.10 --top-50
+python udp_scanner.py 192.168.1.10 --top-100
+python udp_scanner.py 192.168.1.10 --full
+```
+
+A lack of response is not treated as proof that a UDP port is open; silent ports remain `open|filtered` unless stronger evidence is available.
+
+## Threat Intelligence
+
+Successful TCP/SYN scans can be enriched with:
+
+- CISA KEV status
+- FIRST EPSS score and percentile
+- local threat-intelligence caching
+- confidence scoring
+- 0-10 risk scoring
+- TLS posture findings
+- passive web-technology hints
+
+Disable enrichment with:
+
+```bash
+python mayhem_scan.py 192.168.1.10 --mode tcp --no-intel
+```
+
+## Installation
+
+Requirements:
+
 - Python 3.8+
-- Root/sudo access (for SYN scanning only)
-- Scapy (for SYN mode)
+- elevated privileges for raw SYN scanning
+- Linux, Windows, or macOS subject to platform networking restrictions
 
-### Quick Setup
-
-```bash
-# Clone repository
-git clone https://github.com/mkingv92/BlackPort.git
-cd BlackPort
-
-# Install dependencies
-pip install -r requirements.txt
-
-# For SYN scanning support
-pip install scapy
-# OR on Kali Linux:
-sudo apt install python3-scapy
-```
-
-### Dependencies
-```
-colorama>=0.4.6
-requests>=2.31.0
-paramiko>=3.3.1
-reportlab>=4.0.7
-scapy>=2.5.0  # Optional: for SYN scanning
-```
-
----
-
-## 💻 Usage
-
-### Basic Scans
+Create a virtual environment:
 
 ```bash
-# Quick scan (48 high-value ports)
-python main.py 192.168.1.100 --top-100
-
-# Comprehensive scan (200+ ports including DBs/APIs)
-python main.py 192.168.1.100 --top-500
-
-# Standard penetration test range
-python main.py 192.168.1.100 --top-1000
-
-# Full port scan (1-65535)
-python main.py 192.168.1.100 --full
+python -m venv .venv
 ```
 
-### SYN Scanning (Stealth Mode)
+Linux/macOS:
 
 ```bash
-# Quick SYN scan (requires root)
-sudo python main.py 192.168.1.100 --top-100 --syn
-
-# Comprehensive SYN scan
-sudo python main.py 192.168.1.100 --top-500 --syn
-
-# Network-wide SYN scan
-sudo python main.py 192.168.1.0/24 --top-100 --syn
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-### Network Scanning
+Windows PowerShell:
+
+```powershell
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+## Upstream CLI
+
+The original TCP/SYN path remains available:
 
 ```bash
-# Scan entire subnet (with host discovery)
-python main.py 192.168.1.0/24 --top-100
-
-# Custom port range
-python main.py 192.168.1.100 80 443
-
-# Sequential range
-python main.py 192.168.1.100 1 1000
+python main.py 192.168.1.10 --top-100
+python main.py 192.168.1.10 --top-500
+python main.py 192.168.1.10 --top-1000
+python main.py 192.168.1.10 --full
+sudo python main.py 192.168.1.10 --top-100 --syn
 ```
 
-### Report Generation
+## Development Status
 
-```bash
-# Generate all report formats
-python main.py 192.168.1.100 --top-100 --output-dir ~/reports
+This fork is under active development. Treat new functionality as development-stage until the final end-to-end validation pass is complete.
 
-# Include PDF report
-python main.py 192.168.1.100 --top-100 --pdf
+## Attribution
 
-# JSON output to stdout
-python main.py 192.168.1.100 --top-100 --json
-```
+BlackPort was originally created by **Matthew Valdez** (`mkingv92`). This fork preserves upstream attribution and separates fork-specific changes where practical.
 
-### Advanced Options
+## Links
 
-```bash
-# Custom threading (auto-scales by default)
-python main.py 192.168.1.100 --top-100 --threads 500
+[![GitHub](https://img.shields.io/badge/GitHub-jsquaresec-111111?style=for-the-badge&logo=github&logoColor=white)](https://github.com/jsquaresec)
+[![X](https://img.shields.io/badge/X-@j2__sec-111111?style=for-the-badge&logo=x&logoColor=white)](https://x.com/j2_sec?s=11)
+[![OTD Studios](https://img.shields.io/badge/Discord-OTD%20Studios-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/nz5jE7PVh7)
+[![Evolution Gaming](https://img.shields.io/badge/Discord-Evolution%20Gaming-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/rjf9ZYMARN)
+[![Website](https://img.shields.io/badge/Web-onlythedemons.com-168BFF?style=for-the-badge&logo=googlechrome&logoColor=white)](https://onlythedemons.com)
 
-# Custom timeout
-python main.py 192.168.1.100 --top-100 --timeout 2.0
+## Responsible Use
 
-# Quiet mode (suppress progress)
-python main.py 192.168.1.100 --top-100 --quiet
+BlackPort is intended for legitimate administration, lab work, and authorized security assessment. Network scanning and active verification can affect remote systems and may be restricted by law, policy, contracts, or provider terms.
 
-# Add delay between plugin checks
-python main.py 192.168.1.100 --top-100 --delay 0.5
-```
-
----
-
-## 📋 Example Output
-
-```
-==============================
-        BLACKPORT v2.3.0
-  Offensive Port Intelligence
-==============================
-
-[*] Scanning 192.168.56.104 (SYN mode)...
-[*] Using SYN scanning mode (stealth)
-[*] Phase 1: SYN Port Discovery
-[+] Discovery complete: 26 open ports in 1.52s
-[*] Phase 2 & 3: Plugin verification and banner grabbing...
-
-===== SCAN SUMMARY =====
-Target: 192.168.56.104
-Total Open Ports: 26
-CRITICAL: 14
-HIGH Risk: 4
-MEDIUM Risk: 4
-LOW Risk: 4
-Exposure Score: 10/10
-Duration: 8.93 seconds
-
-[+] 21/tcp FTP (vsFTPd 2.3.4) 💀 CRITICAL
-    🚨 CVE-2011-2523 (CVSS: 9.8, Exploit: True)
-    🔌 FTP Backdoor Check [CRITICAL]: vsFTPd 2.3.4 detected
-       BACKDOOR CONFIRMED LIVE on port 6200 — shell accessible
-       💡 Connect: nc 192.168.56.104 6200
-
-[+] 3632/tcp distccd 💀 CRITICAL
-    🔌 distccd RCE Check [CRITICAL]: CVE-2004-2687 CONFIRMED
-       Executed 'id' command: uid=1(daemon) gid=1(daemon)
-       💡 Metasploit: use exploit/unix/misc/distcc_exec
-
-[+] 8009/tcp AJP 💀 CRITICAL
-    🔌 AJP Ghostcat Check [CRITICAL]: CVE-2020-1938 CONFIRMED
-       Read WEB-INF/web.xml without credentials
-       💡 Metasploit: use auxiliary/admin/http/tomcat_ghostcat
-```
-
----
-
-## 🏗️ Architecture
-
-### Three-Phase Scanning
-
-**Phase 1: Port Discovery**
-- **SYN Mode**: Raw packet half-open scans (requires root)
-- **TCP Mode**: Standard TCP connect scans (no privileges needed)
-- 400-thread concurrent scanning (auto-scales based on port count)
-
-**Phase 2: Plugin Verification**
-- 23 active verification plugins run in parallel (10 workers)
-- Confirms exploitability through active probing
-- Returns actionable exploit commands (nc, Metasploit, etc.)
-
-**Phase 3: SMB Post-Sweep**
-- Sequential SMB enumeration for share/config analysis
-- Minimizes disruption to target systems
-
-### Intelligent Batching (SYN Mode)
-
-```python
-# Auto-adjusts based on scan size:
-# < 5000 ports:   Full speed, no batching
-# 5000-10000:     2500 port batches, 75 workers
-# > 10000 ports:  5000 port batches, 50 workers
-```
-
-Prevents file descriptor exhaustion on large scans while maintaining full performance on typical scans.
-
----
-
-## 📁 Output Files
-
-All scans generate multiple report formats:
-
-```
-blackport_<target>_<timestamp>.json   # Structured data
-blackport_<target>_<timestamp>.csv    # Spreadsheet import
-blackport_<target>_<timestamp>.html   # Web-viewable report
-blackport_<target>_<timestamp>.pdf    # Professional report (--pdf flag)
-```
-
-### Report Contents
-- Executive summary with risk scoring (0-10)
-- Detailed findings by severity (CRITICAL/HIGH/MEDIUM/LOW)
-- CVE information with CVSS scores
-- Active verification results
-- Exploit commands and remediation guidance
-
----
-
-## 🛡️ Risk Scoring
-
-**Exposure Score (0-10)**
-- Weighted by finding severity
-- CRITICAL: 4 points each
-- HIGH: 2 points each
-- MEDIUM: 1 point each
-- LOW: 0.5 points each
-- Normalized to 0-10 scale
-
----
-
-## 🔬 Technical Details
-
-### Port Lists
-
-**--top-100** (48 ports): Highest-value targets covering 95% of real-world findings
-```
-21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 512-514,
-587, 993, 995, 1099, 1433, 1521, 1524, 2049, 2121, 3306, 3389, 3632,
-4444, 5432, 5900, 5985, 6000, 6667, 6697, 7000-7001, 8009, 8080,
-8180, 8443, 8787, 9200, 9300, 10000, 27017-27018, 50000
-```
-
-**--top-500** (200+ ports): Adds databases, APIs, Docker, Redis, MongoDB, etc.
-
-### SYN Scanning Implementation
-
-**Packet Structure:**
-```
-IP(dst=target) / TCP(sport=random, dport=port, flags='S', seq=1000)
-```
-
-**Response Analysis:**
-- `SYN-ACK (0x12)` → Port OPEN (send RST to close)
-- `RST (0x04)` → Port CLOSED
-- `ICMP Type 3` → Port FILTERED
-- No response → Port FILTERED (timeout)
-
-**Advantages:**
-- Doesn't complete 3-way handshake (stealthier)
-- Less likely to be logged by applications
-- Faster than full TCP connections
-- No TIME_WAIT socket states
-
----
-
-## 🐛 Troubleshooting
-
-### SYN Scanning Issues
-
-**"Permission denied" or "Insufficient privileges"**
-```bash
-# Linux/macOS: Use sudo
-sudo python main.py 192.168.1.100 --syn
-
-# Windows: Run terminal as Administrator
-```
-
-**"Scapy not installed"**
-```bash
-# Install Scapy
-pip install scapy
-
-# On Kali Linux
-sudo apt install python3-scapy
-```
-
-**"Too many open files" on large scans**
-- Automatic batching should prevent this
-- If still occurs, use `--threads 50` to reduce concurrency
-- Large scans (--full) may take 5-10 minutes with batching
-
-### General Issues
-
-**No open ports found**
-- Check firewall rules on both scanner and target
-- Verify network connectivity: `ping <target>`
-- Try TCP mode if SYN is filtered: remove `--syn` flag
-- Increase timeout: `--timeout 2.0`
-
-**Slow scans**
-- Default threading is optimized; manual override not recommended
-- Check network latency
-- SYN mode is faster on remote targets, TCP may be faster on LAN
-
----
-
-## 📚 Development
-
-### Project Structure
-
-```
-BlackPort/
-├── main.py                 # Entry point, argument parsing
-├── banner.py               # ASCII banner
-├── syn_scanner.py          # SYN scanning engine (NEW in v2.3.0)
-├── unified_scanner.py      # Dual-mode SYN/TCP scanner (NEW)
-├── blackport/
-│   ├── scanner.py          # TCP port scanner
-│   ├── reporter.py         # Report generation
-│   ├── risk_engine.py      # Risk scoring
-│   └── ...
-├── plugins/
-│   ├── ftp_plugin.py       # vsFTPd backdoor verification
-│   ├── distccd_plugin.py   # distccd RCE verification
-│   ├── ajp_plugin.py       # Ghostcat verification
-│   ├── tomcat_plugin.py    # Manager credential testing
-│   └── ... (23 total)
-├── cve_db.py              # CVE database (80+ entries)
-└── requirements.txt
-```
-
-### Adding Custom Plugins
-
-Create a new plugin in `plugins/`:
-
-```python
-from plugins.plugin_base import PluginBase
-
-class MyPlugin(PluginBase):
-    def __init__(self):
-        super().__init__(
-            name="My Service Check",
-            ports=[9999],
-            severity="CRITICAL"
-        )
-    
-    def run(self, target, port, banner):
-        # Your verification logic here
-        if self.is_vulnerable(target, port):
-            return {
-                'finding': 'Vulnerability confirmed',
-                'details': 'Detailed explanation',
-                'recommendation': 'Fix this way'
-            }
-        return None
-```
-
----
-
-## 🤝 Contributing
-
-Contributions welcome! Areas of interest:
-- Additional plugin modules for new services
-- CVE database expansion
-- Performance optimizations
-- Cross-platform compatibility improvements
-
-**Please ensure:**
-- Active verification (not just banner matching)
-- Clean, documented code
-- Test against lab environments only
-
----
-
-## 📜 License
-
-MIT License - See [LICENSE](LICENSE) file for details.
-
-**Legal Disclaimer**: This tool is provided for educational and authorized security testing purposes only. Users are solely responsible for compliance with applicable laws. Unauthorized network scanning is illegal in most jurisdictions.
-
----
-
-## 👤 Author
-
-**Matthew Valdez**
-- GitHub: [@mkingv92](https://github.com/mkingv92)
-- Email: Mvaldez92@outlook.com
-- Certification: CompTIA Tech+ (Active)
-
----
-
-## 🙏 Acknowledgments
-
-- Scapy project for raw packet manipulation capabilities
-- Metasploit Framework for exploit methodology
-- Offensive Security for Metasploitable 2 test environment
-- Security research community for CVE documentation
-
----
-
-## 📌 Version History
-
-### v2.3.0 (March 2026)
-- ✨ **NEW**: SYN scanning implementation with Scapy
-- ✨ **NEW**: Intelligent batching for large scans
-- ✨ **NEW**: Auto-scaling worker pool
-- ⚡ **PERF**: 1.4x faster on standard scans
-- ⚡ **PERF**: 2.6x faster discovery phase
-- 🐛 **FIX**: Resource exhaustion on 65K port scans
-- 📝 **DOCS**: Performance benchmarks and comparison tables
-
-### v2.2.0 (February 2026)
-- 23 active verification plugins
-- Multi-format reporting (JSON/CSV/HTML/PDF)
-- CIDR network scanning
-- CVE database integration
-
-### v2.1.0 (January 2026)
-- Plugin architecture implementation
-- Risk scoring engine
-- Auto-threading optimization
-
-### v2.0.0 (December 2025)
-- Complete rewrite with modular architecture
-- Initial release
-
----
-
-## 🔗 Resources
-
-- [Documentation](https://github.com/mkingv92/BlackPort/wiki)
-- [Report Issues](https://github.com/mkingv92/BlackPort/issues)
-- [Changelog](CHANGELOG.md)
-- [Security Policy](SECURITY.md)
-
----
-
-**⭐ Star this repo if you find it useful!**
-
-*BlackPort — Professional Network Security Scanner*
+Do not use BlackPort against systems you are not authorized to assess.

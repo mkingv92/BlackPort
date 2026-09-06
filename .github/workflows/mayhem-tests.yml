@@ -1,0 +1,99 @@
+name: MayheM-Sec Work Path Tests
+
+on:
+  push:
+    branches:
+      - mayhem-sec/workpath
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out work path
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -c "import packaging"
+
+      - name: Compile MayheM-Sec additions
+        run: |
+          python -m py_compile \
+            assessment_runner.py \
+            mayhem_scan.py \
+            udp_scanner.py \
+            report_enricher.py \
+            gui.py \
+            gui_server_v2.py \
+            gui_server_v3.py \
+            gui_server_v4.py \
+            blackport/report_index.py \
+            blackport/risk_engine_v2.py \
+            blackport/threat_intel.py \
+            blackport/tls_analysis.py \
+            blackport/web_analysis.py
+
+      - name: Run MayheM-Sec unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Check command entry points
+        run: |
+          python mayhem_scan.py --help >/dev/null
+          python assessment_runner.py --help >/dev/null
+          python udp_scanner.py --help >/dev/null
+          python gui.py --help >/dev/null
+
+      - name: Localhost UDP smoke test
+        run: |
+          rm -rf /tmp/blackport-reports
+          mkdir -p /tmp/blackport-reports
+          python udp_scanner.py 127.0.0.1 --top-25 --timeout 0.05 --retries 1 --workers 25 --output-dir /tmp/blackport-reports
+          test -n "$(find /tmp/blackport-reports -maxdepth 1 -name '*_udp.json' -print -quit)"
+
+      - name: Localhost Safe TCP smoke test
+        run: |
+          python mayhem_scan.py 127.0.0.1 \
+            --mode tcp \
+            --assessment-profile safe \
+            --tcp-profile top-100 \
+            --timeout 0.1 \
+            --output-dir /tmp/blackport-reports \
+            --no-intel
+
+      - name: Local GUI start and shutdown smoke test
+        run: |
+          python gui.py --no-browser --port 8877 >/tmp/blackport-gui.log 2>&1 &
+          GUI_PID=$!
+          trap 'kill $GUI_PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8877/api/status >/tmp/status.json; then
+              break
+            fi
+            sleep 0.2
+          done
+          python - <<'PY'
+          import json
+          with open('/tmp/status.json', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+          assert data['running'] is False
+          PY
+          curl -fsS -X POST \
+            -H 'Content-Type: application/json' \
+            -d '{}' \
+            http://127.0.0.1:8877/api/shutdown >/dev/null
+          wait $GUI_PID
+          trap - EXIT
